@@ -669,7 +669,10 @@ function renderPortfolio(holdings){
 
 function renderMembers(members,memberDate,navPerShare,capitalByMember){
   const total=members.reduce((s,m)=>s+m.units,0);
-  if(memberDate) document.getElementById('member-date').textContent='기준일 '+memberDate;
+  // 기준일은 시트 값 대신 오늘 날짜로 자동 표시 (시트가 매일 업데이트되므로)
+  const today=new Date();
+  const todayStr=String(today.getFullYear()).slice(2)+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+  document.getElementById('member-date').textContent='기준일 '+todayStr;
   capitalByMember = capitalByMember || {};
   document.querySelector('#member-table tbody').innerHTML=members.map(m=>{
     const share=(m.units/total)*100;
