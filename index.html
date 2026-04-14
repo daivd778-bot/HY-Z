@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HY-Z Fund</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#080C14; --surface:#0E1420; --surface2:#141B28; --border:#1E2A3A;
+  --gold:#C9952A; --gold-light:#E5B84A; --gold-dim:rgba(201,149,42,0.15);
+  --text:#E8EDF5; --muted:#6B7A8D; --dim:#3A4A5C;
+  --green:#2ECC8A; --red:#E85454; --blue:#3B82F6; --purple:#8B5CF6; --amber:#F59E0B;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 60% 40% at 10% 10%,rgba(201,149,42,0.06) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 80%,rgba(59,130,246,0.04) 0%,transparent 60%);pointer-events:none;z-index:0;}
+
+header{position:sticky;top:0;z-index:100;background:rgba(8,12,20,0.9);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);padding:0 40px;display:flex;align-items:center;justify-content:space-between;height:64px;}
+.logo{display:flex;align-items:baseline;gap:10px;}
+.logo-name{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);line-height:1;}
+.logo-sub{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;font-weight:300;}
+.header-right{display:flex;align-items:center;gap:18px;font-size:11px;color:var(--muted);font-family:'IBM Plex Mono',monospace;}
+.status-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;font-size:11px;border:1px solid var(--border);}
+.status-badge.live{border-color:rgba(46,204,138,0.3);color:var(--green);}
+.status-badge.cached{border-color:rgba(245,158,11,0.3);color:var(--amber);}
+.dot{width:6px;height:6px;border-radius:50%;animation:pulse 2s infinite;}
+.dot.green{background:var(--green);} .dot.amber{background:var(--amber);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+main{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:36px 32px 80px;}
+.sec{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:12px;}
+.sec::after{content:'';flex:1;height:1px;background:var(--border);}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;transition:border-color .2s;}
+.card:hover{border-color:rgba(201,149,42,0.25);}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:28px;}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;position:relative;overflow:hidden;transition:all .2s;animation:fadeUp .45s ease both;}
+.kpi:hover{border-color:rgba(201,149,42,0.35);transform:translateY(-2px);}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--gold),transparent);}
+.kpi:nth-child(1){animation-delay:.05s;}.kpi:nth-child(2){animation-delay:.1s;}.kpi:nth-child(3){animation-delay:.15s;}.kpi:nth-child(4){animation-delay:.2s;}.kpi:nth-child(5){animation-delay:.25s;}
+.kpi-label{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-family:'IBM Plex Mono',monospace;}
+.kpi-value{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:600;color:var(--text);line-height:1;margin-bottom:8px;}
+.kpi-value.gold{color:var(--gold-light);}.kpi-value.green{color:var(--green);}.kpi-value.red{color:var(--red);}
+.kpi-meta{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.badge{display:inline-flex;align-items:center;gap:2px;padding:2px 7px;border-radius:20px;font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:500;}
+.badge.up{background:rgba(46,204,138,0.12);color:var(--green);}.badge.dn{background:rgba(232,84,84,0.12);color:var(--red);}
+
+.g21{display:grid;grid-template-columns:1.45fr 1fr;gap:18px;margin-bottom:18px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+.gport{display:grid;grid-template-columns:1.6fr 1fr;gap:18px;margin-bottom:18px;}
+
+.chart-hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.chart-title{font-size:15px;font-weight:500;margin-bottom:3px;}
+.chart-sub{font-size:11px;color:var(--muted);}
+.chart-legend{display:flex;gap:14px;font-size:11px;font-family:'IBM Plex Mono',monospace;}
+.leg{display:flex;align-items:center;gap:5px;color:var(--muted);}
+.leg-dot{width:8px;height:8px;border-radius:50%;}
+.chart-wrap{height:240px;position:relative;}
+.donut-wrap{height:180px;position:relative;margin:8px 0;}
+
+.wbars{margin-top:6px;}
+.wrow{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.wlabel{width:76px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-size:10px;text-align:right;flex-shrink:0;}
+.wtrack{flex:1;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;}
+.wfill{height:100%;border-radius:3px;transition:width 1.2s ease;}
+.wpct{width:38px;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--text);flex-shrink:0;}
+
+.bench-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;}
+.bench-name{font-size:10px;letter-spacing:1px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:10px;}
+.bench-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.bench-label{font-size:11px;color:var(--muted);}
+.bench-val{font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:500;}
+.bench-hr{border:none;border-top:1px solid var(--border);margin:8px 0;}
+.bench-diff{font-size:12px;padding:2px 7px;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-weight:500;}
+.bench-diff.pos{color:var(--green);background:rgba(46,204,138,0.1);}
+.bench-diff.neg{color:var(--red);background:rgba(232,84,84,0.1);}
+
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);font-weight:400;padding:0 10px 10px 0;text-align:right;font-family:'IBM Plex Mono',monospace;border-bottom:1px solid var(--border);}
+th:first-child{text-align:left;}
+td{padding:10px 10px 10px 0;text-align:right;border-bottom:1px solid rgba(30,42,58,0.4);font-family:'IBM Plex Mono',monospace;font-size:12px;vertical-align:middle;}
+td:first-child{text-align:left;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(201,149,42,0.03);}
+.an{font-weight:500;font-size:12px;color:var(--text);font-family:'Noto Sans KR',sans-serif;}
+.ac{font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:1px;}
+.tt{display:inline-block;padding:2px 6px;border-radius:3px;font-size:10px;font-family:'IBM Plex Mono',monospace;}
+.t-dom{background:rgba(59,130,246,0.12);color:#60A5FA;}
+.t-us{background:rgba(139,92,246,0.12);color:#A78BFA;}
+.t-com{background:rgba(245,158,11,0.12);color:#FCD34D;}
+.t-cash{background:rgba(107,122,141,0.12);color:var(--muted);}
+.t-usd{background:rgba(46,204,138,0.12);color:var(--green);}
+.pp{font-weight:500;}.pp.pos{color:var(--green);}.pp.neg{color:var(--red);}
+
+.mem-av{display:inline-flex;width:26px;height:26px;border-radius:50%;background:var(--gold-dim);border:1px solid rgba(201,149,42,0.3);align-items:center;justify-content:center;font-size:10px;color:var(--gold);margin-right:8px;font-weight:600;vertical-align:middle;font-family:'IBM Plex Mono',monospace;}
+.sbar{display:inline-block;height:3px;background:var(--gold);border-radius:2px;vertical-align:middle;margin-left:6px;opacity:0.55;}
+
+#loading{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;}
+.spinner{width:36px;height:36px;border:2px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.load-text{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:2px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
+footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:10px;color:var(--dim);font-family:'IBM Plex Mono',monospace;letter-spacing:1px;}
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <div class="load-text">구글 시트에서 최신 데이터 로딩 중...</div>
+</div>
+
+<header>
+  <div class="logo">
+    <span class="logo-name">HY-Z</span>
+    <span class="logo-sub">Investment Fund</span>
+  </div>
+  <div class="header-right">
+    <span id="hdr-updated"></span>
+    <span id="status-badge" class="status-badge live"><span class="dot green"></span> LIVE</span>
+  </div>
+</header>
+
+<main>
+  <div class="kpi-grid" id="kpi-grid"></div>
+
+  <div class="sec">수익률 곡선</div>
+  <div class="g21">
+    <div class="card">
+      <div class="chart-hdr">
+        <div>
+          <div class="chart-title">좌당가치 수익률 추이</div>
+          <div class="chart-sub">2024년 12월 이후 누적 수익률 (첫 기록 대비)</div>
+        </div>
+        <div class="chart-legend">
+          <div class="leg"><span class="leg-dot" style="background:#C9952A"></span>HY-Z NAV</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="returnChart"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="chart-hdr">
+        <div>
+          <div class="chart-title">자산군 배분</div>
+          <div class="chart-sub">현재 포트폴리오 비중</div>
+        </div>
+      </div>
+      <div class="donut-wrap"><canvas id="donutChart"></canvas></div>
+      <div class="wbars" id="wbars"></div>
+    </div>
+  </div>
+
+  <div class="sec">벤치마크 비교 (누적수익률 기준)</div>
+  <div class="g3" id="bench-grid"></div>
+
+  <div class="sec">포트폴리오 &amp; 지분율</div>
+  <div class="gport">
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:16px;">현재 보유 종목</div>
+      <table id="port-table">
+        <thead><tr>
+          <th>종목</th><th>유형</th><th>잔고</th>
+          <th>현재가</th><th>평가금액</th><th>손익</th><th>수익률</th><th>비중</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div style="font-size:14px;font-weight:500;margin-bottom:16px;">
+        회원 지분율
+        <span id="member-date" style="font-size:10px;color:var(--muted);font-family:'IBM Plex Mono',monospace;font-weight:400;margin-left:8px;"></span>
+      </div>
+      <table id="member-table">
+        <thead><tr>
+          <th>주주</th><th>보유좌수</th><th>지분율</th><th>출자원금</th><th>평가액</th><th>손익</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer>HY-Z INVESTMENT FUND · FOR INTERNAL USE ONLY</footer>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════
+const SHEET_ID = '1eKMaamGLEPOsSQV8rgxXNXS-ilJZ_uD4lQ02pvEC0Kk';
+const SHEETS = {
+  portfolio: '운용현황',
+  returns:   '수익률 누적',
+  members:   '지분율 추적',
+  benchmark: '벤치마크 계산',
+  capital:   '자본변동내역',
+};
+
+// ════════════════════════════════════════════════════════
+//  FALLBACK DATA (시트 로딩 실패 시 사용)
+// ════════════════════════════════════════════════════════
+const FALLBACK = {
+  updateDate:'2026. 4.13', totalAUM:8073919, navPerShare:22304, totalShares:362,
+  hyzReturn:93.94, kospiReturn:130.22, sp500Return:45.22, benchReturn:108.49,
+  hyzRecent:33.20, kospiRecent:44.85, sp500Recent:-0.66, benchRecent:22.09,
+  allocation:{'국내주식':70.5,'미국주식':18.3,'원자재':5.8,'달러':3.7,'원화':1.7,'채권':0.0},
+  holdings:[
+    {type:'국내주식',name:'SK하이닉스',code:'000660',sector:'반도체',qty:'1.28주',price:'₩1,111,000',costKRW:807069,valueKRW:1423833,pnl:616764,pnlPct:76.4,weight:17.6},
+    {type:'국내주식',name:'LS ELECTRIC',code:'010120',sector:'전기장비',qty:'6.44주',price:'₩183,700',costKRW:587012,valueKRW:1183307,pnl:596295,pnlPct:101.6,weight:14.7},
+    {type:'국내주식',name:'SOL AI 반도체소부장',code:'455850',sector:'반도체',qty:'40주',price:'₩26,315',costKRW:935400,valueKRW:1052600,pnl:117200,pnlPct:12.5,weight:13.0},
+    {type:'국내주식',name:'KODEX AI 전력핵심설비',code:'487240',sector:'전기장비',qty:'25주',price:'₩35,960',costKRW:824475,valueKRW:899000,pnl:74525,pnlPct:9.0,weight:11.1},
+    {type:'국내주식',name:'TIGER 코리아원자력',code:'0091P0',sector:'원자력',qty:'35주',price:'₩23,780',costKRW:819665,valueKRW:832300,pnl:12635,pnlPct:1.5,weight:10.3},
+    {type:'미국주식',name:'TIMEFOLIO 글로벌AI',code:'456600',sector:'AI',qty:'24주',price:'₩48,415',costKRW:838402,valueKRW:1161960,pnl:323558,pnlPct:38.6,weight:14.4},
+    {type:'미국주식',name:'1Q 미국우주항공테크',code:'0131V0',sector:'우주',qty:'25주',price:'₩12,565',costKRW:306250,valueKRW:314125,pnl:7875,pnlPct:2.6,weight:3.9},
+    {type:'원자재',name:'iShares Gold Trust',code:'IAU',sector:'금',qty:'2주',price:'$89.21',costKRW:236428,valueKRW:264956,pnl:28528,pnlPct:8.3,weight:3.3},
+    {type:'원자재',name:'iShares Silver Trust',code:'SLV',sector:'은',qty:'2주',price:'$68.28',costKRW:187168,valueKRW:202794,pnl:15626,pnlPct:4.7,weight:2.5},
+    {type:'달러',name:'외화 예수금',code:'USD',sector:'-',qty:'$199.68',price:'₩1,485',costKRW:286561,valueKRW:296528,pnl:9967,pnlPct:3.5,weight:3.7},
+    {type:'원화',name:'원화 예수금',code:'KRW',sector:'-',qty:'-',price:'-',costKRW:140716,valueKRW:140716,pnl:0,pnlPct:0,weight:1.7},
+  ],
+  returns:[
+    {date:'2024-12-23',nav:10898},{date:'2025-01-02',nav:10935},{date:'2025-01-08',nav:10957},
+    {date:'2025-01-15',nav:10952},{date:'2025-01-22',nav:10953},{date:'2025-01-29',nav:10953},
+    {date:'2025-02-05',nav:11058},{date:'2025-02-12',nav:11434},{date:'2025-02-19',nav:11523},
+    {date:'2025-02-26',nav:11163},{date:'2025-03-05',nav:11300},{date:'2025-03-12',nav:11281},
+    {date:'2025-03-19',nav:11287},{date:'2025-03-26',nav:11031},{date:'2025-04-02',nav:11204},
+    {date:'2025-04-09',nav:10947},{date:'2025-04-16',nav:11088},{date:'2025-04-23',nav:11497},
+    {date:'2025-04-30',nav:11602},{date:'2025-05-07',nav:12113},{date:'2025-05-14',nav:12457},
+    {date:'2025-05-21',nav:12534},{date:'2025-05-28',nav:12545},{date:'2025-06-04',nav:12673},
+    {date:'2025-06-11',nav:12816},{date:'2025-06-18',nav:12961},{date:'2025-06-25',nav:13278},
+    {date:'2025-07-02',nav:13091},{date:'2025-07-09',nav:13096},{date:'2025-07-16',nav:13305},
+    {date:'2025-07-23',nav:13233},{date:'2025-07-30',nav:13308},{date:'2025-08-06',nav:13362},
+    {date:'2025-08-13',nav:13308},{date:'2025-08-20',nav:12843},{date:'2025-08-27',nav:13082},
+    {date:'2025-09-03',nav:13132},{date:'2025-09-10',nav:13500},{date:'2025-09-17',nav:13634},
+    {date:'2025-09-24',nav:13744},{date:'2025-10-01',nav:13865},{date:'2025-10-08',nav:14029},
+    {date:'2025-10-15',nav:15175},{date:'2025-10-22',nav:14887},{date:'2025-10-29',nav:16206},
+    {date:'2025-11-05',nav:16424},{date:'2025-11-12',nav:16858},{date:'2025-12-29',nav:16745},
+    {date:'2026-01-07',nav:18493},{date:'2026-03-19',nav:21456},{date:'2026-03-25',nav:21073},
+    {date:'2026-04-01',nav:20299},{date:'2026-04-08',nav:21086},
+  ],
+  members:[
+    {name:'임재승',units:80},{name:'김근영',units:46},{name:'김기환',units:30},
+    {name:'박정우',units:28},{name:'김지영①',units:25},{name:'박도연',units:20},
+    {name:'김수민',units:20},{name:'서진우',units:10},{name:'김지영②',units:10},
+    {name:'서민재',units:10},{name:'김효나',units:10},{name:'이예빈',units:10},
+    {name:'박미소',units:10},{name:'정희철',units:10},{name:'유채원',units:8},
+    {name:'이지호',units:6},{name:'이치원',units:5},{name:'서민성',units:5},
+    {name:'김세련',units:5},{name:'최세항',units:5},{name:'석윤영',units:3},
+    {name:'오승주',units:3},{name:'김도희',units:1},{name:'최민서',units:1},
+    {name:'HY-Z 자기주식',units:1},
+  ],
+  memberDate:'26-03-19',
+  // 주주별 초기 출자원금 (자본변동내역 시트에서 집계). 시트 로드 실패 시 좌당 10,000원 × 좌수로 계산됨.
+  capitalByMember:{},
+};
+
+// ════════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════════
+const fmt   = (n,d=0) => n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtK  = n => '₩' + fmt(Math.round(n));
+const fmtP  = (n,sign=true) => (sign&&n>0?'+':'') + n.toFixed(2)+'%';
+const fmtP1 = (n,sign=true) => (sign&&n>0?'+':'') + n.toFixed(1)+'%';
+
+// ════════════════════════════════════════════════════════
+//  JSONP 기반 구글 시트 로더 (로컬 파일에서도 작동)
+// ════════════════════════════════════════════════════════
+// fetch() 대신 <script> 태그를 이용한 JSONP 방식 사용
+// → 브라우저 CORS 제한 없이 로컬 HTML 파일에서 구글 시트 데이터 로드 가능
+
+function gvizFetch(sheet) {
+  return new Promise(function(resolve, reject) {
+    var cbName = '__gviz_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID +
+              '/gviz/tq?tqx=reqId:0;out:json;responseHandler:' + cbName +
+              '&sheet=' + encodeURIComponent(sheet) + '&t=' + Date.now();
+    var settled = false;
+    var script = document.createElement('script');
+
+    var timer = setTimeout(function() {
+      if (!settled) { settled = true; cleanup(); reject(new Error('timeout:' + sheet)); }
+    }, 12000);
+
+    function cleanup() {
+      clearTimeout(timer);
+      if (window[cbName]) delete window[cbName];
+      if (script.parentNode) script.parentNode.removeChild(script);
+    }
+
+    window[cbName] = function(resp) {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      if (!resp || resp.status !== 'ok' || !resp.table) {
+        reject(new Error('gviz error:' + sheet)); return;
+      }
+      // gviz JSON → 2D 문자열 배열 변환 (parseCSV 결과와 동일한 구조)
+      // gviz JSON은 헤더를 cols에 별도 저장하므로, 행 앞에 빈 행+헤더행 추가
+      var headerRow = resp.table.cols.map(function(c){ return c.label || ''; });
+      var dataRows  = resp.table.rows.map(function(row) {
+        return (row.c || []).map(function(cell){ return gvizCellStr(cell); });
+      });
+      resolve([[], headerRow].concat(dataRows));
+    };
+
+    script.src = url;
+    script.onerror = function() {
+      if (!settled) { settled = true; cleanup(); reject(new Error('load error:' + sheet)); }
+    };
+    document.head.appendChild(script);
+  });
+}
+
+// gviz JSON 셀 값 → 문자열 변환
+// 날짜형: Date(2024,0,25) → "2024-01-25"
+// 숫자형: 서식 적용값(cell.f) 우선 사용 → "108.49%", "₩8,073,919" 등
+function gvizCellStr(cell) {
+  if (!cell || cell.v === null || cell.v === undefined) return '';
+  var v = cell.v;
+  // ① JavaScript Date 객체 (gviz JSONP는 날짜형 셀을 실제 Date 객체로 반환)
+  if (v instanceof Date) {
+    return v.getFullYear()+'-'+String(v.getMonth()+1).padStart(2,'0')+'-'+String(v.getDate()).padStart(2,'0');
+  }
+  // ② 문자열 날짜: "Date(2024,0,25)"
+  if (typeof v === 'string' && v.indexOf('Date(') === 0) {
+    var m = v.match(/Date\((\d+),(\d+),(\d+)\)/);
+    if (m) return m[1]+'-'+String(parseInt(m[2])+1).padStart(2,'0')+'-'+String(m[3]).padStart(2,'0');
+  }
+  // ③ 서식값 우선 (퍼센트, 통화 등)
+  if (cell.f !== null && cell.f !== undefined) return String(cell.f);
+  return String(v);
+}
+
+// ════════════════════════════════════════════════════════
+//  PARSERS  (2D 배열 직접 수신)
+// ════════════════════════════════════════════════════════
+function pNum(s){
+  if(s===null||s===undefined||s==='') return 0;
+  if(typeof s==='number') return s;
+  return parseFloat(String(s).replace(/[₩$,\s%,]/g,'').trim())||0;
+}
+
+function parseKorDate(s){
+  if(!s) return null;
+  s=s.trim();
+  var m;
+  // ISO: 2026-01-07
+  m=s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if(m) return s.substring(0,10);
+  // 4자리 연도: 2026.04.01 / 2026. 4. 1.
+  m=s.match(/(\d{4})[.\s]+(\d{1,2})[.\s]+(\d{1,2})/);
+  if(m) return m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  // 2자리 연도: 26.04.01 / 26. 4. 1.
+  m=s.match(/(\d{2})[.\s]+(\d{1,2})[.\s]+(\d{1,2})/);
+  if(m) return '20'+m[1]+'-'+m[2].padStart(2,'0')+'-'+m[3].padStart(2,'0');
+  return null;
+}
+
+function parsePortfolio(rows){
+  var res={updateDate:'',totalAUM:0,navPerShare:0,totalShares:0,
+    hyzReturn:0,kospiReturn:0,sp500Return:0,benchReturn:0,
+    hyzRecent:0,kospiRecent:0,sp500Recent:0,benchRecent:0,
+    holdings:[],allocation:{}};
+  var VTYPES=['국내주식','미국주식','원자재','원화','달러'];
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i]; if(!r) continue;
+    if(r[1]==='최신화'&&r[2]) res.updateDate=r[2];
+    if(VTYPES.includes(r[1])&&r[2]&&r[2]!=='비중'&&!/^[\d.,]+\s*%?$/.test(r[2].trim())){
+      res.holdings.push({
+        type:r[1],name:r[2],code:r[3]||'',sector:r[4]||'',
+        qty:r[5]?(r[1]==='달러'?(String(r[5]).startsWith('$')?r[5]:'$'+r[5]):r[5]+'주'):'',price:r[6]||'-',
+        costKRW:pNum(r[8]),valueKRW:pNum(r[9]),
+        pnl:pNum(r[10]),pnlPct:pNum(r[11]),weight:pNum(r[12]),
+      });
+    }
+    if(r[1]==='총자산'){
+      res.totalAUM=pNum(r[2]);
+      res.hyzReturn=pNum(r[4]);res.kospiReturn=pNum(r[5]);
+      res.sp500Return=pNum(r[6]);res.benchReturn=pNum(r[7]);
+    }
+    if(r[1]==='발행주식수'){
+      res.totalShares=pNum(r[2]);
+      res.hyzRecent=pNum(r[4]);res.kospiRecent=pNum(r[5]);
+      res.sp500Recent=pNum(r[6]);res.benchRecent=pNum(r[7]);
+    }
+    if(r[1]==='주당가격') res.navPerShare=pNum(r[2]);
+    if(r[1]==='유형'&&r[2]==='비중'){
+      for(var j=i+1;j<i+8&&j<rows.length;j++){
+        var ar=rows[j];
+        if(ar&&ar[1]&&['국내주식','미국주식','원자재','채권','달러','원화'].includes(ar[1]))
+          res.allocation[ar[1]]=pNum(ar[2]);
+      }
+    }
+  }
+  // allocation 섹션이 비어있으면 holdings에서 자동 집계
+  if(Object.keys(res.allocation).length===0 && res.holdings.length>0){
+    res.holdings.forEach(function(h){
+      var key=h.type;
+      if(!res.allocation[key]) res.allocation[key]=0;
+      res.allocation[key]+=h.weight;
+    });
+  }
+  return res;
+}
+
+function parseReturns(rows){
+  var ret=[];
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i]; if(!r||r.length<2) continue;
+    var date=null, nav=0;
+    // 날짜 컬럼을 r[0]~r[3] 중에서 동적 탐색
+    for(var ci=0;ci<=3&&ci<r.length;ci++){
+      var d=parseKorDate(r[ci]);
+      if(d){
+        date=d;
+        // NAV는 날짜 컬럼 이후에서 탐색 (NAV는 최소 1000 이상)
+        for(var ni=ci+1;ni<=ci+3&&ni<r.length;ni++){
+          var n=pNum(r[ni]);
+          if(n>=1000){ nav=n; break; }
+        }
+        break;
+      }
+    }
+    if(date&&nav>=1000) ret.push({date:date,nav:nav});
+  }
+  // 날짜 기준 정렬 후 중복 제거
+  ret.sort(function(a,b){return a.date<b.date?-1:a.date>b.date?1:0;});
+  return ret.filter(function(r,i){ return i===0||r.date!==ret[i-1].date; });
+}
+
+function parseMembers(rows){
+  var memberDate=''; var members=[];
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i]; if(!r) continue;
+    if(r[1]==='기준일'&&r[2]) memberDate=r[2];
+    var units=pNum(r[2]);
+    if(r[1]&&!['주주','기준일','합계','*작성 시 보유좌수가',''].includes(r[1])&&units>0)
+      members.push({name:r[1],units:units});
+  }
+  return {members:members,memberDate:memberDate};
+}
+
+function parseBenchmark(rows){
+  // 벤치마크 계산 시트: 날짜 행에서 누적벤치마크%(col 15) 파싱
+  var lastResult=null;
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i];
+    if(!r||!r[0]) continue;
+    if(!/\d{4}-\d{2}-\d{2}/.test(r[0])) continue;
+    var cumBench=pNum(r[15]);
+    if(cumBench!==0) lastResult={benchReturn:cumBench};
+  }
+  return lastResult;
+}
+
+// 자본변동내역 시트: 주주별 "자본금 기여액" 집계
+// 시트 구조: 왼쪽에 자본금 납입/불출 원장(입금액/출금액/이름), 오른쪽에 요약표(주주 | 자본금 기여액)
+// 자본금 기여액 = 초기매수금액 - 매도금액 (매도 전이면 초기매수금액과 동일)
+// 전략:
+//   1) 전체 시트에서 "자본금 기여액"/"기여액" 헤더 컬럼 탐색
+//   2) 그 컬럼의 "바로 왼쪽 컬럼"을 주주 이름 컬럼으로 간주 (가장 흔한 레이아웃)
+//   3) 그래도 안 되면 행별 휴리스틱
+function parseCapital(rows){
+  var EXCLUDE=['합계','총계','총','기준일','비고','항목','내역','누적','변동','날짜','일자','구분','계','기여액','주주','이름','성명','주주명','입금','출금','자본금','납입','불출'];
+  var out={};
+  // --- 1) 헤더 탐색 (전체 시트 스캔) ---
+  var amtCol=-1, headerRow=-1, nameCol=-1;
+  outer:
+  for(var i=0;i<rows.length;i++){
+    var r=rows[i]; if(!r) continue;
+    for(var c=0;c<r.length;c++){
+      var v=(r[c]||'').toString().trim();
+      if(!v) continue;
+      if(v.indexOf('자본금 기여액')>=0 || v.indexOf('자본금기여액')>=0 || v==='기여액'){
+        amtCol=c; headerRow=i;
+        // 같은 행에서 바로 왼쪽에 "주주"/"이름"이 있으면 nameCol로, 없으면 (c-1)을 기본값으로
+        for(var c2=c-1;c2>=0;c2--){
+          var v2=(r[c2]||'').toString().trim();
+          if(v2==='주주'||v2==='이름'||v2==='성명'||v2==='주주명'){ nameCol=c2; break; }
+        }
+        if(nameCol<0 && c>0) nameCol=c-1; // 바로 왼쪽 컬럼 기본
+        break outer;
+      }
+    }
+  }
+  // --- 2) 헤더 발견: 엄격하게 해당 두 컬럼만 읽기 ---
+  if(amtCol>=0){
+    console.info('[HY-Z] 자본금 기여액 컬럼=',amtCol,' 이름 컬럼=',nameCol,' 헤더행=',headerRow);
+    if(nameCol<0){
+      console.warn('[HY-Z] 이름 컬럼을 못 찾음. 자본금 기여액 바로 왼쪽을 쓰세요.');
+      return out;
+    }
+    for(var i2=headerRow+1;i2<rows.length;i2++){
+      var r2=rows[i2]; if(!r2) continue;
+      // 이름은 nameCol에서만 읽음 (fallback 탐색 제거 - 원장 행과 섞이는 것 방지)
+      var nv=(r2[nameCol]||'').toString().trim();
+      if(!nv) continue;
+      if(isExcluded(nv,EXCLUDE)) continue;
+      if(!/[가-힣A-Za-z]/.test(nv)) continue;
+      if(nv.length>15) continue;
+      var amt=pNum(r2[amtCol]);
+      if(amt<=0) continue;
+      // 요약표는 이름당 1회 → 덮어쓰기 (합산 시 중복 집계 위험)
+      out[nv]=amt;
+    }
+    console.info('[HY-Z] 자본변동내역 파싱 결과:',out);
+    return out;
+  }
+  // --- 3) Fallback: 행별 휴리스틱 ---
+  console.warn('[HY-Z] "자본금 기여액" 헤더를 못 찾음 → 휴리스틱 모드');
+  for(var i3=0;i3<rows.length;i3++){
+    var r3=rows[i3]; if(!r3) continue;
+    var nameIdx=-1, nameVal=null;
+    for(var c4=0;c4<r3.length;c4++){
+      var v4=(r3[c4]||'').toString().trim();
+      if(!v4) continue;
+      if(/^[\d,.\s₩$%\-+()]+$/.test(v4)) continue;
+      if(/\d{2,4}[-./]\d{1,2}/.test(v4)) continue;
+      if(isExcluded(v4,EXCLUDE)) continue;
+      if(/[가-힣A-Za-z]/.test(v4) && v4.length<=15){ nameIdx=c4; nameVal=v4; break; }
+    }
+    if(nameIdx<0) continue;
+    var amount=0;
+    for(var c5=nameIdx+1;c5<r3.length;c5++){
+      var n5=pNum(r3[c5]);
+      if(n5>=1000 && n5>amount) amount=n5;
+    }
+    if(amount>0) out[nameVal]=(out[nameVal]||0)+amount;
+  }
+  return out;
+}
+function isExcluded(s,list){
+  for(var k=0;k<list.length;k++) if(s===list[k]||s.indexOf(list[k])===0) return true;
+  return false;
+}
+
+// ════════════════════════════════════════════════════════
+//  CHARTS
+// ════════════════════════════════════════════════════════
+let rcInst=null,dcInst=null;
+
+function renderReturnChart(returns){
+  const base=returns[0]?.nav||10898;
+  const labels=returns.map(r=>{
+    const d=new Date(r.date);
+    return `${String(d.getFullYear()).slice(2)}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+  });
+  const data=returns.map(r=>+((r.nav/base*100-100).toFixed(2)));
+  if(rcInst)rcInst.destroy();
+  const ctx=document.getElementById('returnChart').getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,240);
+  grad.addColorStop(0,'rgba(201,149,42,0.2)');grad.addColorStop(1,'rgba(201,149,42,0)');
+  rcInst=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{
+      label:'HY-Z',data,borderColor:'#C9952A',backgroundColor:grad,fill:true,
+      tension:0.35,borderWidth:2.5,
+      pointRadius:data.map((_,i)=>i===data.length-1?4:0),
+      pointBackgroundColor:'#C9952A',
+    }]},
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      interaction:{mode:'index',intersect:false},
+      plugins:{
+        legend:{display:false},
+        tooltip:{backgroundColor:'#0E1420',borderColor:'#1E2A3A',borderWidth:1,
+          titleColor:'#6B7A8D',bodyColor:'#E8EDF5',
+          callbacks:{label:c=>`  HY-Z: ${c.parsed.y>=0?'+':''}${c.parsed.y.toFixed(2)}%`}
+        }
+      },
+      scales:{
+        x:{grid:{color:'rgba(30,42,58,0.5)'},ticks:{color:'#3A4A5C',font:{family:'IBM Plex Mono',size:9},maxRotation:45,maxTicksLimit:12}},
+        y:{grid:{color:'rgba(30,42,58,0.5)'},ticks:{color:'#3A4A5C',font:{family:'IBM Plex Mono',size:9},callback:v=>(v>=0?'+':'')+v.toFixed(0)+'%'}}
+      }
+    }
+  });
+}
+
+function renderDonut(allocation){
+  const COLORS={'국내주식':'#3B82F6','미국주식':'#8B5CF6','원자재':'#F59E0B','달러':'#2ECC8A','원화':'#6B7A8D','채권':'#E85454'};
+  const keys=Object.keys(allocation).filter(k=>allocation[k]>0);
+  if(dcInst)dcInst.destroy();
+  const ctx=document.getElementById('donutChart').getContext('2d');
+  dcInst=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels:keys,datasets:[{data:keys.map(k=>allocation[k]),backgroundColor:keys.map(k=>COLORS[k]||'#888'),borderColor:'#0E1420',borderWidth:3,hoverOffset:5}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
+      plugins:{legend:{display:false},
+        tooltip:{backgroundColor:'#0E1420',borderColor:'#1E2A3A',borderWidth:1,bodyColor:'#E8EDF5',
+          callbacks:{label:c=>` ${c.label}: ${c.parsed.toFixed(1)}%`}}}}
+  });
+  document.getElementById('wbars').innerHTML=keys.map(k=>`
+    <div class="wrow">
+      <span class="wlabel">${k}</span>
+      <div class="wtrack"><div class="wfill" style="width:${allocation[k]}%;background:${COLORS[k]||'#888'}"></div></div>
+      <span class="wpct">${allocation[k].toFixed(1)}%</span>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+//  RENDERERS
+// ════════════════════════════════════════════════════════
+function renderKPIs(d){
+  const navPct=((d.navPerShare-10000)/10000)*100;
+  const ab=d.hyzReturn-d.benchReturn;
+  // 총 투자원금은 자본변동내역 시트 합계만 사용
+  const capValues = d.capitalByMember ? Object.values(d.capitalByMember) : [];
+  const capSum = capValues.reduce((s,v)=>s+v,0);
+  const hasCap = capSum>0;
+  const totalPnl = hasCap ? d.totalAUM - capSum : 0;
+  const totalPnlPct = hasCap ? (totalPnl/capSum)*100 : 0;
+  const kpis=[
+    {label:'총 운용 규모 (AUM)',value:'₩'+fmt(Math.round(d.totalAUM/10000))+'만',cls:'gold',
+      badge:null,meta:d.totalShares+'좌 발행'},
+    {label:'총 투자원금',value:hasCap?'₩'+fmt(Math.round(capSum/10000))+'만':'—',cls:'',
+      badge:null,meta:hasCap?'자본변동내역 합계':'자본변동내역 로드 필요'},
+    {label:'원금 대비 손익',value:hasCap?((totalPnl>=0?'+':'')+'₩'+fmt(Math.round(totalPnl/10000))+'만'):'—',cls:hasCap?(totalPnl>=0?'green':'red'):'',
+      badge:hasCap?{text:fmtP1(totalPnlPct),up:totalPnl>=0}:null,meta:'현재 평가액 기준'},
+    {label:'주당 순자산가치 (NAV)',value:'₩'+fmt(d.navPerShare),cls:'',
+      badge:{text:fmtP1(navPct),up:navPct>=0},meta:'설정가 ₩10,000 대비'},
+    {label:'누적 계좌 수익률',value:fmtP1(d.hyzReturn,false),cls:d.hyzReturn>=0?'green':'red',
+      badge:null,meta:`벤치마크 대비 <span style="color:${ab>=0?'var(--green)':'var(--red)'}">${fmtP(ab)}</span>`},
+  ];
+  document.getElementById('kpi-grid').innerHTML=kpis.map(k=>`
+    <div class="kpi">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-value ${k.cls}">${k.value}</div>
+      <div class="kpi-meta">
+        ${k.badge?`<span class="badge ${k.badge.up?'up':'dn'}">${k.badge.up?'▲':'▼'} ${k.badge.text}</span>`:''}
+        <span>${k.meta}</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderBench(d){
+  const bs=[
+    {name:'KOSPI 대비',b:d.kospiReturn,h:d.hyzReturn},
+    {name:'S&P 500 대비',b:d.sp500Return,h:d.hyzReturn},
+    {name:'벤치마크 계산 대비',b:d.benchReturn,h:d.hyzReturn},
+  ];
+  document.getElementById('bench-grid').innerHTML=bs.map(b=>{
+    const diff=b.h-b.b;
+    return `<div class="bench-card">
+      <div class="bench-name">${b.name}</div>
+      <div class="bench-row"><span class="bench-label">벤치마크</span><span class="bench-val" style="color:var(--muted)">${fmtP1(b.b,false)}</span></div>
+      <div class="bench-row"><span class="bench-label">HY-Z</span><span class="bench-val" style="color:var(--gold-light)">${fmtP1(b.h,false)}</span></div>
+      <hr class="bench-hr">
+      <div class="bench-row"><span class="bench-label" style="font-weight:500">초과수익 α</span><span class="bench-diff ${diff>=0?'pos':'neg'}">${fmtP(diff)}</span></div>
+    </div>`;
+  }).join('');
+}
+
+function renderPortfolio(holdings){
+  holdings = holdings.slice().sort(function(a,b){ return b.weight - a.weight; });
+  const TAG={'국내주식':'<span class="tt t-dom">국내</span>','미국주식':'<span class="tt t-us">미국</span>',
+    '원자재':'<span class="tt t-com">원자재</span>','달러':'<span class="tt t-usd">달러</span>','원화':'<span class="tt t-cash">원화</span>'};
+  document.querySelector('#port-table tbody').innerHTML=holdings.map(h=>`
+    <tr>
+      <td><div class="an">${h.name}</div><div class="ac">${h.code}${h.sector&&h.sector!=='-'?' · '+h.sector:''}</div></td>
+      <td>${TAG[h.type]||h.type}</td>
+      <td style="font-size:11px">${h.qty||'-'}</td>
+      <td style="font-size:11px">${h.price||'-'}</td>
+      <td>${fmtK(h.valueKRW)}</td>
+      <td class="pp ${h.pnl>0?'pos':h.pnl<0?'neg':''}">${h.pnl===0&&h.pnlPct===0?'-':(h.pnl>=0?'+':'')+fmtK(h.pnl)}</td>
+      <td class="pp ${h.pnlPct>0?'pos':h.pnlPct<0?'neg':''}">${h.pnl===0&&h.pnlPct===0?'-':fmtP(h.pnlPct)}</td>
+      <td>${h.weight.toFixed(1)}%</td>
+    </tr>`).join('');
+}
+
+function renderMembers(members,memberDate,navPerShare,capitalByMember){
+  const total=members.reduce((s,m)=>s+m.units,0);
+  if(memberDate) document.getElementById('member-date').textContent='기준일 '+memberDate;
+  capitalByMember = capitalByMember || {};
+  document.querySelector('#member-table tbody').innerHTML=members.map(m=>{
+    const share=(m.units/total)*100;
+    const value=m.units*navPerShare;
+    // 출자원금은 자본변동내역 시트의 자본금 기여액만 사용 (매칭 실패 시 "—")
+    let cap = capitalByMember[m.name];
+    if(cap===undefined){
+      const bare = m.name.replace(/[①②③④⑤⑥⑦⑧⑨⑩]/g,'').trim();
+      if(capitalByMember[bare]!==undefined) cap = capitalByMember[bare];
+    }
+    const hasCap = cap!==undefined && cap>0;
+    const capCell = hasCap ? fmtK(cap) : '<span style="color:var(--dim)">—</span>';
+    let pnlCell = '<span style="color:var(--dim)">—</span>';
+    if(hasCap){
+      const pnl = value - cap;
+      const pnlPct = (pnl/cap)*100;
+      const pnlCls = pnl>0?'pos':pnl<0?'neg':'';
+      pnlCell = `<span class="pp ${pnlCls}">${pnl>=0?'+':''}${fmtK(pnl)}<br><span style="font-size:10px;opacity:0.85">${pnl>=0?'+':''}${pnlPct.toFixed(1)}%</span></span>`;
+    }
+    return `<tr>
+      <td><span class="mem-av">${[...m.name][0]}</span>${m.name}</td>
+      <td>${fmt(m.units)}좌</td>
+      <td>${share.toFixed(1)}%<span class="sbar" style="width:${Math.round(share*1.3)}px"></span></td>
+      <td>${capCell}</td>
+      <td>${fmtK(Math.round(value))}</td>
+      <td>${pnlCell}</td>
+    </tr>`;
+  }).join('');
+}
+
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+function setStatus(live){
+  var el=document.getElementById('status-badge');
+  el.className='status-badge '+(live?'live':'cached');
+  el.innerHTML='<span class="dot '+(live?'green':'amber')+'"></span> '+(live?'LIVE · 구글 시트 연동':'CACHED · 저장 데이터');
+}
+
+function renderAll(data,live){
+  document.getElementById('hdr-updated').textContent=
+    data.updateDate?'최신화 '+data.updateDate:'';
+  renderKPIs(data);
+  renderReturnChart(data.returns||FALLBACK.returns);
+  renderDonut(data.allocation||FALLBACK.allocation);
+  renderBench(data);
+  renderPortfolio(data.holdings||FALLBACK.holdings);
+  renderMembers(data.members||FALLBACK.members, data.memberDate||FALLBACK.memberDate, data.navPerShare||FALLBACK.navPerShare, data.capitalByMember||{});
+  setStatus(live);
+  document.getElementById('loading').style.display='none';
+}
+
+async function loadData(){
+  try{
+    // 메인 3개 시트 동시 로드 (JSONP 방식)
+    const [portRows,retRows,memRows]=await Promise.all([
+      gvizFetch(SHEETS.portfolio),
+      gvizFetch(SHEETS.returns),
+      gvizFetch(SHEETS.members),
+    ]);
+    const portData=parsePortfolio(portRows);
+    const returns=parseReturns(retRows);
+    const{members,memberDate}=parseMembers(memRows);
+
+    // 벤치마크 계산 시트 별도 로드 (실패 시 CSV 기본값 108.49 유지)
+    let benchReturn=FALLBACK.benchReturn;
+    try{
+      const benchRows=await gvizFetch(SHEETS.benchmark);
+      const bd=parseBenchmark(benchRows);
+      if(bd&&bd.benchReturn!==0) benchReturn=bd.benchReturn;
+    }catch(be){ console.warn('[HY-Z] 벤치마크 시트 로딩 실패, 기본값 사용:',be); }
+
+    // 자본변동내역 시트 로드 → 주주별 초기 출자원금
+    let capitalByMember={};
+    try{
+      const capRows=await gvizFetch(SHEETS.capital);
+      capitalByMember=parseCapital(capRows);
+      console.info('[HY-Z] 자본변동내역 로드 완료. 매칭 인원:',Object.keys(capitalByMember).length);
+    }catch(ce){ console.warn('[HY-Z] 자본변동내역 시트 로딩 실패:',ce); }
+
+    const data={
+      ...FALLBACK,...portData,
+      benchReturn,
+      returns:returns.length>0?returns:FALLBACK.returns,
+      members:members.length>0?members:FALLBACK.members,
+      memberDate:memberDate||FALLBACK.memberDate,
+      capitalByMember,
+    };
+    renderAll(data,true);
+  }catch(e){
+    console.error('[HY-Z] 구글 시트 로딩 실패 → 저장 데이터 사용. 원인:',e);
+    console.error('[HY-Z] 체크 항목: ①시트 공유가 "링크가 있는 모든 사용자: 뷰어"인지 ②시트 이름("운용현황","수익률 누적","지분율 추적","자본변동내역")이 정확한지 ③네트워크 연결');
+    renderAll({...FALLBACK,returns:FALLBACK.returns,members:FALLBACK.members,memberDate:FALLBACK.memberDate,capitalByMember:{}},false);
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>
