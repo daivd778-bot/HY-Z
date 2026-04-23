@@ -561,7 +561,7 @@ function parseBenchmarkFull(rows){
     }
     var dateMatch = endStr.match(/(\d{4}-\d{2}-\d{2})/);
     if(!dateMatch) continue;
-    var cumBench = pNum(r[15]);
+    var cumBench = pNum(r[13]);
     // virtualNav: 1 + cumPct/100 (시리즈를 다른 지수처럼 다루기 위해)
     series.push({ date: dateMatch[1], cumPct: cumBench, virtualNav: 1 + cumBench/100 });
     if(cumBench !== 0) lastBench = cumBench;
