@@ -178,6 +178,18 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:10px
   .chart-wrap{height:200px;}
   .donut-wrap{height:160px;}
 }
+
+/* ─── 포트폴리오 히트맵 Treemap (Squarify) ──────────────── */
+.phm-wrap{position:relative;width:100%;height:300px;overflow:hidden;border-radius:6px;background:var(--surface2);}
+.phm-group-block{position:absolute;box-sizing:border-box;border:1px solid rgba(255,255,255,0.08);}
+.phm-item-block{position:absolute;box-sizing:border-box;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;cursor:pointer;transition:filter .15s,box-shadow .15s;}
+.phm-item-block:hover{filter:brightness(1.2);box-shadow:0 0 0 2px rgba(255,255,255,0.28) inset,0 4px 14px rgba(0,0,0,0.45);z-index:10;}
+.phm-item-block .phm-name{font-size:11px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.7);text-align:center;padding:0 3px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+.phm-item-block .phm-pct{font-size:11px;font-family:'IBM Plex Mono',monospace;font-weight:500;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,0.7);margin-top:1px;}
+.phm-item-block .phm-code{font-size:9px;font-family:'IBM Plex Mono',monospace;color:rgba(255,255,255,0.6);margin-top:1px;}
+.phm-group-label{position:absolute;top:4px;left:5px;font-size:9px;font-family:'IBM Plex Mono',monospace;color:#ccc;background:rgba(0,0,0,0.55);padding:1px 5px;border-radius:2px;z-index:5;pointer-events:none;letter-spacing:0.3px;white-space:nowrap;}
+@media (max-width:900px) and (min-width:769px){.phm-wrap{height:260px;}}
+@media (max-width:768px){.phm-wrap{height:280px;}.phm-item-block .phm-name,.phm-item-block .phm-pct{font-size:10px;}.phm-group-label{font-size:8px;}}
 </style>
 </head>
 <body>
@@ -255,15 +267,22 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:10px
   <!-- ═══════════ 포트폴리오 & 지분율 ═══════════ -->
   <div class="sec">포트폴리오 &amp; 지분율</div>
   <div class="gport">
-    <div class="card">
-      <div style="font-size:14px;font-weight:500;margin-bottom:16px;">현재 보유 종목</div>
-      <table id="port-table">
-        <thead><tr>
-          <th>종목</th><th>유형</th><th>잔고</th>
-          <th>현재가</th><th>평가금액</th><th>손익</th><th>수익률</th><th>비중</th>
-        </tr></thead>
-        <tbody></tbody>
-      </table>
+    <div>
+      <div class="card">
+        <div style="font-size:14px;font-weight:500;margin-bottom:16px;">현재 보유 종목</div>
+        <table id="port-table">
+          <thead><tr>
+            <th>종목</th><th>유형</th><th>잔고</th>
+            <th>현재가</th><th>평가금액</th><th>손익</th><th>수익률</th><th>비중</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="card" id="portfolio-heatmap-card" style="margin-top:14px;">
+        <div id="phm-title" style="font-size:13px;font-weight:500;margin-bottom:4px;color:var(--text);">포트폴리오 히트맵</div>
+        <div class="chart-sub" id="phm-status" style="margin-bottom:12px;">일일 수익률</div>
+        <div id="portfolio-heatmap"><div class="phm-wrap"></div></div>
+      </div>
     </div>
     <div class="card">
       <div style="font-size:14px;font-weight:500;margin-bottom:16px;">
@@ -316,17 +335,17 @@ const FALLBACK = {
   hyzRecent:33.20, kospiRecent:44.85, sp500Recent:-0.66, benchRecent:22.09,
   allocation:{'국내주식':70.5,'미국주식':18.3,'원자재':5.8,'달러':3.7,'원화':1.7,'채권':0.0},
   holdings:[
-    {type:'국내주식',name:'SK하이닉스',code:'000660',sector:'반도체',qty:'1.28주',price:'₩1,111,000',costKRW:807069,valueKRW:1423833,pnl:616764,pnlPct:76.4,weight:17.6},
-    {type:'국내주식',name:'LS ELECTRIC',code:'010120',sector:'전기장비',qty:'6.44주',price:'₩183,700',costKRW:587012,valueKRW:1183307,pnl:596295,pnlPct:101.6,weight:14.7},
-    {type:'국내주식',name:'SOL AI 반도체소부장',code:'455850',sector:'반도체',qty:'40주',price:'₩26,315',costKRW:935400,valueKRW:1052600,pnl:117200,pnlPct:12.5,weight:13.0},
-    {type:'국내주식',name:'KODEX AI 전력핵심설비',code:'487240',sector:'전기장비',qty:'25주',price:'₩35,960',costKRW:824475,valueKRW:899000,pnl:74525,pnlPct:9.0,weight:11.1},
-    {type:'국내주식',name:'TIGER 코리아원자력',code:'0091P0',sector:'원자력',qty:'35주',price:'₩23,780',costKRW:819665,valueKRW:832300,pnl:12635,pnlPct:1.5,weight:10.3},
-    {type:'미국주식',name:'TIMEFOLIO 글로벌AI',code:'456600',sector:'AI',qty:'24주',price:'₩48,415',costKRW:838402,valueKRW:1161960,pnl:323558,pnlPct:38.6,weight:14.4},
-    {type:'미국주식',name:'1Q 미국우주항공테크',code:'0131V0',sector:'우주',qty:'25주',price:'₩12,565',costKRW:306250,valueKRW:314125,pnl:7875,pnlPct:2.6,weight:3.9},
-    {type:'원자재',name:'iShares Gold Trust',code:'IAU',sector:'금',qty:'2주',price:'$89.21',costKRW:236428,valueKRW:264956,pnl:28528,pnlPct:8.3,weight:3.3},
-    {type:'원자재',name:'iShares Silver Trust',code:'SLV',sector:'은',qty:'2주',price:'$68.28',costKRW:187168,valueKRW:202794,pnl:15626,pnlPct:4.7,weight:2.5},
-    {type:'달러',name:'외화 예수금',code:'USD',sector:'-',qty:'$199.68',price:'₩1,485',costKRW:286561,valueKRW:296528,pnl:9967,pnlPct:3.5,weight:3.7},
-    {type:'원화',name:'원화 예수금',code:'KRW',sector:'-',qty:'-',price:'-',costKRW:140716,valueKRW:140716,pnl:0,pnlPct:0,weight:1.7},
+    {type:'국내주식',name:'SK하이닉스',code:'000660',sector:'반도체',qty:'1.28주',price:'₩1,111,000',costKRW:807069,valueKRW:1423833,pnl:616764,pnlPct:76.4,weight:17.6,dailyPct:0},
+    {type:'국내주식',name:'LS ELECTRIC',code:'010120',sector:'전기장비',qty:'6.44주',price:'₩183,700',costKRW:587012,valueKRW:1183307,pnl:596295,pnlPct:101.6,weight:14.7,dailyPct:0},
+    {type:'국내주식',name:'SOL AI 반도체소부장',code:'455850',sector:'반도체',qty:'40주',price:'₩26,315',costKRW:935400,valueKRW:1052600,pnl:117200,pnlPct:12.5,weight:13.0,dailyPct:0},
+    {type:'국내주식',name:'KODEX AI 전력핵심설비',code:'487240',sector:'전기장비',qty:'25주',price:'₩35,960',costKRW:824475,valueKRW:899000,pnl:74525,pnlPct:9.0,weight:11.1,dailyPct:0},
+    {type:'국내주식',name:'TIGER 코리아원자력',code:'0091P0',sector:'원자력',qty:'35주',price:'₩23,780',costKRW:819665,valueKRW:832300,pnl:12635,pnlPct:1.5,weight:10.3,dailyPct:0},
+    {type:'미국주식',name:'TIMEFOLIO 글로벌AI',code:'456600',sector:'AI',qty:'24주',price:'₩48,415',costKRW:838402,valueKRW:1161960,pnl:323558,pnlPct:38.6,weight:14.4,dailyPct:0},
+    {type:'미국주식',name:'1Q 미국우주항공테크',code:'0131V0',sector:'우주',qty:'25주',price:'₩12,565',costKRW:306250,valueKRW:314125,pnl:7875,pnlPct:2.6,weight:3.9,dailyPct:0},
+    {type:'원자재',name:'iShares Gold Trust',code:'IAU',sector:'금',qty:'2주',price:'$89.21',costKRW:236428,valueKRW:264956,pnl:28528,pnlPct:8.3,weight:3.3,dailyPct:0},
+    {type:'원자재',name:'iShares Silver Trust',code:'SLV',sector:'은',qty:'2주',price:'$68.28',costKRW:187168,valueKRW:202794,pnl:15626,pnlPct:4.7,weight:2.5,dailyPct:0},
+    {type:'달러',name:'외화 예수금',code:'USD',sector:'-',qty:'$199.68',price:'₩1,485',costKRW:286561,valueKRW:296528,pnl:9967,pnlPct:3.5,weight:3.7,dailyPct:0},
+    {type:'원화',name:'원화 예수금',code:'KRW',sector:'-',qty:'-',price:'-',costKRW:140716,valueKRW:140716,pnl:0,pnlPct:0,weight:1.7,dailyPct:0},
   ],
   returns:[
     {date:'2024-12-23',nav:10898},{date:'2025-01-02',nav:10935},{date:'2025-01-08',nav:10957},
@@ -502,7 +521,7 @@ function parsePortfolio(rows){
         type:r[1],name:r[2],code:r[3]||'',sector:r[4]||'',
         qty:r[5]?(r[1]==='달러'?(String(r[5]).startsWith('$')?r[5]:'$'+r[5]):r[5]+'주'):'',price:r[6]||'-',
         costKRW:pNum(r[8]),valueKRW:pNum(r[9]),
-        pnl:pNum(r[10]),pnlPct:pNum(r[11]),weight:pNum(r[12]),
+        pnl:pNum(r[10]),pnlPct:pNum(r[11]),weight:pNum(r[12]),dailyPct:pNum(r[13])||0,
       });
     }
     if(r[1]==='총자산'){
@@ -1245,9 +1264,9 @@ function renderHeatmap(returns) {
 function renderKPIs(d){
   const navPct=((d.navPerShare-10000)/10000)*100;
 
-  // ── 차트와 동일한 기준(설정 이후 전체)으로 HY-Z·벤치마크 수익률 재계산 ──
-  // 페이지 전체에서 수치가 일관되게 보이도록 통일
-  let hyzR = d.hyzReturn, benchR = d.benchReturn;
+  // ── NAV 기반으로 HY-Z 누적 수익률 계산 (NAV 카드와 완벽 일치) ──
+  const hyzR = ((d.navPerShare - INCEPTION_NAV) / INCEPTION_NAV) * 100;
+  let benchR = d.benchReturn;
   if (CHART_STATE.dataCache) {
     const built = buildPeriodDatasets('ALL',
       CHART_STATE.dataCache.returns,
@@ -1257,7 +1276,6 @@ function renderKPIs(d){
       CHART_STATE.dataCache.usdkrwHist
     );
     if (built) {
-      if (built.finalReturns.hyz   !== null && built.finalReturns.hyz   !== undefined) hyzR   = built.finalReturns.hyz;
       if (built.finalReturns.bench !== null && built.finalReturns.bench !== undefined) benchR = built.finalReturns.bench;
     }
   }
@@ -1292,11 +1310,9 @@ function renderKPIs(d){
 }
 
 function renderBench(d){
-  // ── 차트와 동일한 기준(HY-Z 첫 기록일=0%)으로 카드 수치 재계산 ──
-  // 섹션 제목이 "설정 이후 누적"이므로 펀드 설정일 기준이 정답.
-  // 구글시트 총자산 행의 값은 지수데이터 시작일(2024-01-09) 기준일 수 있어서
-  // 차트와 괴리가 발생. 차트 쪽 숫자로 통일해 일관성 확보.
-  let kospiR = d.kospiReturn, sp500R = d.sp500Return, benchR = d.benchReturn, hyzR = d.hyzReturn;
+  // ── NAV 기반으로 HY-Z 수익률 계산, 나머지는 차트 기준으로 통일 ──
+  const hyzR = ((d.navPerShare - INCEPTION_NAV) / INCEPTION_NAV) * 100;
+  let kospiR = d.kospiReturn, sp500R = d.sp500Return, benchR = d.benchReturn;
   if (CHART_STATE.dataCache) {
     const built = buildPeriodDatasets('ALL',
       CHART_STATE.dataCache.returns,
@@ -1306,7 +1322,6 @@ function renderBench(d){
       CHART_STATE.dataCache.usdkrwHist
     );
     if (built) {
-      if (built.finalReturns.hyz   !== null && built.finalReturns.hyz   !== undefined) hyzR   = built.finalReturns.hyz;
       if (built.finalReturns.kospi !== null && built.finalReturns.kospi !== undefined) kospiR = built.finalReturns.kospi;
       if (built.finalReturns.sp500 !== null && built.finalReturns.sp500 !== undefined) sp500R = built.finalReturns.sp500;
       if (built.finalReturns.bench !== null && built.finalReturns.bench !== undefined) benchR = built.finalReturns.bench;
@@ -1384,6 +1399,232 @@ function renderMembers(members,memberDate,navPerShare,capitalByMember){
 }
 
 
+// ─── 실시간 가격 fetcher (Naver Securities) ──────────────
+const PRICE_CACHE = {};
+const PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?'
+];
+var priceUpdateTimer = null;
+
+const KR_RE = /^[0-9]{6}$|^[0-9]{4}[A-Z][0-9]$/;
+
+async function fetchNaverStockData(code) {
+  var apiUrl = encodeURIComponent('https://m.stock.naver.com/api/stock/' + code + '/basic');
+  for (var i = 0; i < PROXIES.length; i++) {
+    try {
+      var res = await fetch(PROXIES[i] + apiUrl);
+      if (!res.ok) continue;
+      var json = await res.json();
+      var changeRate = parseFloat(json.fluctuationsRatio);
+      if (!isNaN(changeRate)) return changeRate;
+    } catch(e) { /* try next proxy */ }
+  }
+  return null;
+}
+
+async function fetchAllRealtimePrices(holdings) {
+  var tasks = holdings
+    .filter(function(h){ return KR_RE.test(h.code); })
+    .map(function(h){
+      return fetchNaverStockData(h.code).then(function(rate){
+        if (rate !== null) PRICE_CACHE[h.code] = { changeRate: rate, ts: Date.now() };
+      });
+    });
+  await Promise.allSettled(tasks);
+  var statusEl = document.getElementById('phm-status');
+  if (statusEl) {
+    var state = getMarketState();
+    var kst = new Date(Date.now() + 9*3600*1000);
+    var hm = ('0'+kst.getUTCHours()).slice(-2) + ':' + ('0'+kst.getUTCMinutes()).slice(-2);
+    var icons = {realtime:'🟢', reset:'🟡', closed:'⚫', weekend:'⚫'};
+    var labels = {realtime:'장중', reset:'장전 초기화', closed:'장마감', weekend:'주말'};
+    statusEl.textContent = (icons[state]||'⚫') + ' ' + (labels[state]||state) + ' · KST ' + hm;
+  }
+  renderPortfolioHeatmap(holdings);
+}
+
+function getMarketState() {
+  var kst = new Date(Date.now() + 9*3600*1000);
+  var day = kst.getUTCDay();
+  if (day === 0 || day === 6) return 'weekend';
+  var h = kst.getUTCHours(), m = kst.getUTCMinutes();
+  var mins = h * 60 + m;
+  if (mins >= 8*60 && mins < 9*60) return 'reset';
+  if (mins >= 9*60 && mins < 15*60+30) return 'realtime';
+  return 'closed';
+}
+
+function getDailyChange(holding) {
+  var state = getMarketState();
+  if (state === 'reset') return 0;
+  var cached = PRICE_CACHE[holding.code];
+  if (cached) return cached.changeRate;
+  return 0;
+}
+
+function startRealtimePriceUpdates(holdings) {
+  if (priceUpdateTimer) { clearInterval(priceUpdateTimer); priceUpdateTimer = null; }
+  fetchAllRealtimePrices(holdings);
+  priceUpdateTimer = setInterval(function(){ fetchAllRealtimePrices(holdings); }, 30000);
+}
+
+// ─── 포트폴리오 히트맵 · Squarify Treemap ───────────────
+function phmDailyColor(p) {
+  if (p === 0)  return '#4a4a4a';
+  if (p >= 3)   return '#1B5E20';
+  if (p >= 2)   return '#2E7D32';
+  if (p >= 1)   return '#388E3C';
+  if (p >= 0.5) return '#66BB6A';
+  if (p > 0)    return '#81C784';
+  if (p > -0.5) return '#E57373';
+  if (p > -1)   return '#EF5350';
+  if (p > -2)   return '#E53935';
+  if (p > -3)   return '#D32F2F';
+  return '#B71C1C';
+}
+
+function phmCumulColor(p) {
+  if (p > -2 && p < 2) return '#555';
+  if (p >= 50) return '#1B5E20';
+  if (p >= 20) return '#2E7D32';
+  if (p >= 10) return '#388E3C';
+  if (p >= 5)  return '#4CAF50';
+  if (p > 0)   return '#66BB6A';
+  if (p >= -5) return '#E57373';
+  if (p >= -10)return '#EF5350';
+  if (p >= -20)return '#D32F2F';
+  return '#B71C1C';
+}
+
+function _squarifyHelper(items, rect, out) {
+  if (!items.length || rect.w < 1 || rect.h < 1) return;
+  if (items.length === 1) {
+    out.push(Object.assign({}, items[0], {x:rect.x,y:rect.y,w:rect.w,h:rect.h}));
+    return;
+  }
+  var isW = rect.w >= rect.h, ss = isW ? rect.h : rect.w;
+  function wr(row, thick) {
+    var m = 0;
+    for (var i = 0; i < row.length; i++) {
+      var l = row[i].area / thick, r = Math.max(thick/l, l/thick);
+      if (r > m) m = r;
+    }
+    return m;
+  }
+  var row = [items[0]], rA = items[0].area, cut = 1;
+  for (var i = 1; i < items.length; i++) {
+    var nA = rA + items[i].area;
+    if (wr(row.concat([items[i]]), nA/ss) > wr(row, rA/ss)) break;
+    row.push(items[i]); rA = nA; cut = i + 1;
+  }
+  var thick = rA / ss, pos = isW ? rect.y : rect.x;
+  for (var k = 0; k < row.length; k++) {
+    var len = row[k].area / thick;
+    out.push(Object.assign({}, row[k], isW
+      ? {x:rect.x, y:pos, w:thick, h:len}
+      : {x:pos, y:rect.y, w:len, h:thick}));
+    pos += len;
+  }
+  _squarifyHelper(items.slice(cut), isW
+    ? {x:rect.x+thick, y:rect.y, w:rect.w-thick, h:rect.h}
+    : {x:rect.x, y:rect.y+thick, w:rect.w, h:rect.h-thick}, out);
+}
+
+function squarify(items, rect) {
+  if (!items || !items.length || rect.w < 1 || rect.h < 1) return [];
+  var tot = items.reduce(function(s,it){ return s+(it.weight||0); }, 0);
+  if (!tot) return [];
+  var area = rect.w * rect.h;
+  var sc = items.filter(function(it){ return (it.weight||0) > 0; })
+               .sort(function(a,b){ return b.weight - a.weight; })
+               .map(function(it){ return Object.assign({}, it, {area:(it.weight/tot)*area}); });
+  var out = [];
+  _squarifyHelper(sc, {x:rect.x,y:rect.y,w:rect.w,h:rect.h}, out);
+  return out;
+}
+
+function renderPortfolioHeatmap(holdings) {
+  var card    = document.getElementById('portfolio-heatmap-card');
+  var cont    = document.getElementById('portfolio-heatmap');
+  var titleEl = document.getElementById('phm-title');
+  if (!holdings || !holdings.length) { if (card) card.style.display='none'; return; }
+  if (card) card.style.display = '';
+
+  if (titleEl) {
+    titleEl.innerHTML = '포트폴리오 히트맵 <span style="font-size:10px;color:var(--muted);font-weight:400;font-family:\'IBM Plex Mono\',monospace;">일일 수익률 기준</span>';
+  }
+
+  var statusEl = document.getElementById('phm-status');
+  if (statusEl && !priceUpdateTimer) {
+    statusEl.textContent = '일일 수익률';
+  }
+
+  var typeOrder = ['국내주식','미국주식','원자재','달러','원화','채권'];
+  var gMap = {};
+  holdings.forEach(function(h){ var t=h.type||'기타'; if(!gMap[t])gMap[t]=[]; gMap[t].push(h); });
+  var types = typeOrder.filter(function(t){ return !!gMap[t]; })
+    .concat(Object.keys(gMap).filter(function(t){ return typeOrder.indexOf(t)===-1; }));
+
+  var groupItems = types.map(function(type){
+    var items = gMap[type];
+    return {type:type, items:items, weight:items.reduce(function(s,h){return s+(h.weight||0);},0)};
+  });
+
+  var wrapEl = cont.querySelector('.phm-wrap');
+  if (!wrapEl) { cont.innerHTML='<div class="phm-wrap"></div>'; wrapEl=cont.querySelector('.phm-wrap'); }
+  var cw = wrapEl.offsetWidth || cont.offsetWidth || 600;
+  var ch = wrapEl.offsetHeight || 300;
+  if (cw < 20) cw = 600;
+
+  var GAP = 2;
+  var groupRects = squarify(groupItems, {x:0,y:0,w:cw,h:ch});
+
+  var html = '';
+  groupRects.forEach(function(gr) {
+    var gx=Math.round(gr.x), gy=Math.round(gr.y),
+        gw=Math.round(gr.w), gh=Math.round(gr.h);
+    html += '<div class="phm-group-block" style="left:'+gx+'px;top:'+gy+'px;width:'+gw+'px;height:'+gh+'px;">';
+    html += '<div class="phm-group-label">'+gr.type+'</div>';
+
+    var pad = GAP + 1;
+    var iRects = squarify(gr.items, {x:pad,y:pad,w:Math.max(4,gw-pad*2),h:Math.max(4,gh-pad*2)});
+    iRects.forEach(function(ir) {
+      var ix=Math.round(ir.x), iy=Math.round(ir.y);
+      var iw=Math.max(2,Math.round(ir.w)-GAP), ih=Math.max(2,Math.round(ir.h)-GAP);
+      var daily  = getDailyChange(ir);
+      var sign   = daily >= 0 ? '+' : '';
+      var cSign  = ir.pnlPct >= 0 ? '+' : '';
+      var dStr   = sign + daily.toFixed(2) + '%';
+      var tip    = ir.name+' ('+ir.code+')\n일일: '+dStr
+                 + '\n누적: '+cSign+ir.pnlPct.toFixed(1)+'%'
+                 + '\n평가: ₩'+Math.round(ir.valueKRW).toLocaleString('ko-KR')
+                 + '\n비중: '+ir.weight.toFixed(1)+'%';
+      var small  = iw < 55 || ih < 38;
+      var vsmall = iw < 28 || ih < 22;
+      var showCode = !small && ir.weight >= 4;
+      html += '<div class="phm-item-block" style="left:'+ix+'px;top:'+iy+'px;width:'+iw+'px;height:'+ih+'px;background:'+phmDailyColor(daily)+'" title="'+tip+'" data-code="'+ir.code+'">';
+      if (!vsmall) {
+        html += '<span class="phm-name"'+(small?' style="font-size:9px;"':'')+'>'+ir.name+'</span>';
+        html += '<span class="phm-pct"'+(small?' style="font-size:9px;"':'')+'>'+sign+daily.toFixed(2)+'%</span>';
+        if (showCode) html += '<span class="phm-code">'+ir.code+'</span>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+  });
+
+  wrapEl.innerHTML = html;
+
+  wrapEl.querySelectorAll('.phm-item-block').forEach(function(el) {
+    el.addEventListener('dblclick', function() {
+      var code = el.dataset.code;
+      if (code && KR_RE.test(code))
+        window.open('https://finance.naver.com/item/main.naver?code='+code, '_blank');
+    });
+  });
+}
+
 // ════════════════════════════════════════════════════════
 //  INIT
 // ════════════════════════════════════════════════════════
@@ -1413,6 +1654,9 @@ function renderAll(data, live){
   renderBench(data);
   renderHeatmap(data.returns || FALLBACK.returns);
   renderPortfolio(data.holdings||FALLBACK.holdings);
+  var heatmapHoldings = data.holdings||FALLBACK.holdings;
+  renderPortfolioHeatmap(heatmapHoldings);
+  startRealtimePriceUpdates(heatmapHoldings);
   renderMembers(data.members||FALLBACK.members, data.memberDate||FALLBACK.memberDate, data.navPerShare||FALLBACK.navPerShare, data.capitalByMember||{});
   setStatus(live);
   document.getElementById('loading').style.display='none';
