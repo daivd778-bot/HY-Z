@@ -4,14 +4,27 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
 <title>HY-Z Fund</title>
+<script>(function(){var t=localStorage.getItem('hyz_theme')||(window.matchMedia('(prefers-color-scheme:light)').matches?'light':'dark');document.documentElement.setAttribute('data-theme',t);})();</script>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=Noto+Sans+KR:wght@300;400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-:root {
+:root, [data-theme="dark"] {
   --bg:#080C14; --surface:#0E1420; --surface2:#141B28; --border:#1E2A3A;
   --gold:#C9952A; --gold-light:#E5B84A; --gold-dim:rgba(201,149,42,0.15);
   --text:#E8EDF5; --muted:#6B7A8D; --dim:#3A4A5C;
   --green:#2ECC8A; --red:#E85454; --blue:#3B82F6; --purple:#8B5CF6; --amber:#F59E0B;
+  --card-shadow:none;
+  --chart-grid:rgba(30,42,58,0.5); --chart-tick:#3A4A5C;
+  --phm-zero:#4a4a4a;
+}
+[data-theme="light"] {
+  --bg:#FAFAF7; --surface:#FFFFFF; --surface2:#F4F2EE; --border:#E5E2DB;
+  --gold:#B8870F; --gold-light:#C9952A; --gold-dim:rgba(184,135,15,0.12);
+  --text:#1F1E1C; --muted:#6B6862; --dim:#A8A29E;
+  --green:#1F8E5C; --red:#C8362F; --blue:#2563EB; --purple:#7C3AED; --amber:#D97706;
+  --card-shadow:0 1px 4px rgba(0,0,0,0.07);
+  --chart-grid:rgba(229,226,219,0.8); --chart-tick:#A8A29E;
+  --phm-zero:#B8B5AE;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-serif;min-height:100vh;overflow-x:hidden;}
@@ -190,6 +203,33 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:10px
 .phm-group-label{position:absolute;top:4px;left:5px;font-size:9px;font-family:'IBM Plex Mono',monospace;color:#ccc;background:rgba(0,0,0,0.55);padding:1px 5px;border-radius:2px;z-index:5;pointer-events:none;letter-spacing:0.3px;white-space:nowrap;}
 @media (max-width:900px) and (min-width:769px){.phm-wrap{height:260px;}}
 @media (max-width:768px){.phm-wrap{height:280px;}.phm-item-block .phm-name,.phm-item-block .phm-pct{font-size:10px;}.phm-group-label{font-size:8px;}}
+.phm-legend{display:flex;flex-direction:row;gap:2px;margin-top:8px;width:fit-content;margin-left:auto;}
+.phm-legend-item{height:18px;padding:0 6px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:8.5px;font-family:'IBM Plex Mono',monospace;font-weight:600;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.6);white-space:nowrap;}
+
+/* ─── 라이트 모드 오버라이드 ──────────────────────────── */
+[data-theme="light"] body::before{background:radial-gradient(ellipse 60% 40% at 10% 10%,rgba(184,135,15,0.07) 0%,transparent 60%),radial-gradient(ellipse 50% 50% at 90% 80%,rgba(37,99,235,0.04) 0%,transparent 60%);}
+[data-theme="light"] header{background:rgba(250,250,247,0.92);}
+[data-theme="light"] .card{box-shadow:var(--card-shadow);}
+[data-theme="light"] .kpi{box-shadow:var(--card-shadow);}
+[data-theme="light"] .bench-card{box-shadow:var(--card-shadow);}
+[data-theme="light"] .bench-info .bench-tip{background:#fff;}
+[data-theme="light"] .heatmap-table td.empty{background:rgba(229,226,219,0.4);color:var(--dim);}
+[data-theme="light"] td{border-bottom-color:rgba(229,226,219,0.7);}
+[data-theme="light"] tr:hover td{background:rgba(184,135,15,0.04);}
+[data-theme="light"] .phm-group-label{color:#f5f5f5;}
+[data-theme="light"] .period-tab.active{background:var(--gold-dim);color:var(--gold);}
+
+/* ─── 테마 토글 버튼 ──────────────────────────────────── */
+.theme-toggle{background:var(--surface2);border:1px solid var(--border);color:var(--text);width:34px;height:34px;border-radius:8px;cursor:pointer;font-size:15px;transition:border-color .2s,background .2s;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;}
+.theme-toggle:hover{border-color:var(--gold);}
+[data-theme="dark"]  .theme-icon-light{display:none;}
+[data-theme="light"] .theme-icon-dark{display:none;}
+
+/* ─── 히트맵 카드 헤더 + 새로고침 버튼 ────────────────── */
+.phm-card-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.phm-refresh-btn{background:none;border:1px solid var(--border);color:var(--muted);width:24px;height:24px;border-radius:5px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.phm-refresh-btn:hover{color:var(--gold);border-color:var(--gold);}
+.phm-refresh-btn.spinning{animation:spin .8s linear infinite;}
 </style>
 </head>
 <body>
@@ -207,6 +247,10 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:10px
   <div class="header-right">
     <span id="hdr-updated"></span>
     <span id="status-badge" class="status-badge live"><span class="dot green"></span> LIVE</span>
+    <button class="theme-toggle" id="theme-toggle" aria-label="테마 변경">
+      <span class="theme-icon-dark">☾</span>
+      <span class="theme-icon-light">☀</span>
+    </button>
   </div>
 </header>
 
@@ -279,9 +323,13 @@ footer{position:relative;z-index:1;text-align:center;padding:20px;font-size:10px
         </table>
       </div>
       <div class="card" id="portfolio-heatmap-card" style="margin-top:14px;">
-        <div id="phm-title" style="font-size:13px;font-weight:500;margin-bottom:4px;color:var(--text);">포트폴리오 히트맵</div>
+        <div class="phm-card-hdr">
+          <div id="phm-title" style="font-size:13px;font-weight:500;color:var(--text);">포트폴리오 히트맵</div>
+          <button class="phm-refresh-btn" id="phm-refresh-btn" title="즉시 새로고침">↻</button>
+        </div>
         <div class="chart-sub" id="phm-status" style="margin-bottom:12px;">일일 수익률</div>
         <div id="portfolio-heatmap"><div class="phm-wrap"></div></div>
+        <div id="phm-legend"></div>
       </div>
     </div>
     <div class="card">
@@ -1005,8 +1053,8 @@ function renderCompareChart() {
       plugins: {
         legend: { display: false },  // 커스텀 HTML 범례 사용
         tooltip: {
-          backgroundColor: '#0E1420', borderColor: '#1E2A3A', borderWidth: 1,
-          titleColor: '#6B7A8D', bodyColor: '#E8EDF5',
+          backgroundColor: cssVar('--surface'), borderColor: cssVar('--border'), borderWidth: 1,
+          titleColor: cssVar('--muted'), bodyColor: cssVar('--text'),
           padding: 10, cornerRadius: 6,
           callbacks: {
             label: c => {
@@ -1019,13 +1067,13 @@ function renderCompareChart() {
       },
       scales: {
         x: {
-          grid: { color: 'rgba(30,42,58,0.5)' },
-          ticks: { color: '#3A4A5C', font: { family: 'IBM Plex Mono', size: 9 }, maxRotation: 45, maxTicksLimit: 12 }
+          grid: { color: cssVar('--chart-grid') },
+          ticks: { color: cssVar('--chart-tick'), font: { family: 'IBM Plex Mono', size: 9 }, maxRotation: 45, maxTicksLimit: 12 }
         },
         y: {
-          grid: { color: 'rgba(30,42,58,0.5)' },
+          grid: { color: cssVar('--chart-grid') },
           ticks: {
-            color: '#3A4A5C', font: { family: 'IBM Plex Mono', size: 9 },
+            color: cssVar('--chart-tick'), font: { family: 'IBM Plex Mono', size: 9 },
             callback: v => (v >= 0 ? '+' : '') + v.toFixed(0) + '%'
           }
         }
@@ -1109,10 +1157,10 @@ function renderDonut(allocation){
   const ctx=document.getElementById('donutChart').getContext('2d');
   dcInst=new Chart(ctx,{
     type:'doughnut',
-    data:{labels:keys,datasets:[{data:keys.map(k=>allocation[k]),backgroundColor:keys.map(k=>COLORS[k]||'#888'),borderColor:'#0E1420',borderWidth:3,hoverOffset:5}]},
+    data:{labels:keys,datasets:[{data:keys.map(k=>allocation[k]),backgroundColor:keys.map(k=>COLORS[k]||'#888'),borderColor:cssVar('--bg'),borderWidth:3,hoverOffset:5}]},
     options:{responsive:true,maintainAspectRatio:false,cutout:'68%',
       plugins:{legend:{display:false},
-        tooltip:{backgroundColor:'#0E1420',borderColor:'#1E2A3A',borderWidth:1,bodyColor:'#E8EDF5',
+        tooltip:{backgroundColor:cssVar('--surface'),borderColor:cssVar('--border'),borderWidth:1,bodyColor:cssVar('--text'),
           callbacks:{label:c=>` ${c.label}: ${c.parsed.toFixed(1)}%`}}}}
   });
   document.getElementById('wbars').innerHTML=keys.map(k=>`
@@ -1399,6 +1447,11 @@ function renderMembers(members,memberDate,navPerShare,capitalByMember){
 }
 
 
+// ─── 테마 헬퍼 ───────────────────────────────────────────
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 // ─── 실시간 가격 fetcher (Naver Securities) ──────────────
 const PRICE_CACHE = {};
 const PROXIES = [
@@ -1406,42 +1459,165 @@ const PROXIES = [
   'https://corsproxy.io/?'
 ];
 var priceUpdateTimer = null;
+var holdingsReloadTimer = null;
+var renderDebounceTimer = null;
+var _holdingsAutoReloadStarted = false;
+var _currentHeatmapHoldings = null;
 
 const KR_RE = /^[0-9]{6}$|^[0-9]{4}[A-Z][0-9]$/;
 
+function savePriceCache() {
+  try { sessionStorage.setItem('hyz_price_cache', JSON.stringify(PRICE_CACHE)); } catch(e) {}
+}
+function loadPriceCache() {
+  try {
+    var saved = sessionStorage.getItem('hyz_price_cache');
+    if (!saved) return;
+    var parsed = JSON.parse(saved);
+    Object.keys(parsed).forEach(function(k) {
+      if (Date.now() - parsed[k].ts < 600000) PRICE_CACHE[k] = parsed[k];
+    });
+  } catch(e) {}
+}
+
+function scheduleHeatmapRender(holdings) {
+  if (renderDebounceTimer) clearTimeout(renderDebounceTimer);
+  renderDebounceTimer = setTimeout(function() { renderPortfolioHeatmap(holdings); }, 300);
+}
+
+function updateMarketStatusBadge() {
+  var statusEl = document.getElementById('phm-status');
+  if (!statusEl) return;
+  var state = getMarketState();
+  var kst = new Date(Date.now() + 9*3600*1000);
+  var hm = ('0'+kst.getUTCHours()).slice(-2) + ':' + ('0'+kst.getUTCMinutes()).slice(-2);
+  var icons  = {realtime:'🟢', reset:'🟡', closed:'⚫', weekend:'⚫'};
+  var labels = {realtime:'장중', reset:'장전 초기화', closed:'장마감', weekend:'주말'};
+  statusEl.textContent = (icons[state]||'⚫') + ' ' + (labels[state]||state) + ' · KST ' + hm;
+}
+
 async function fetchNaverStockData(code) {
+  var cached = PRICE_CACHE[code];
+  if (cached && Date.now() - cached.ts < 60000) return cached.changeRate;
+
   var apiUrl = encodeURIComponent('https://m.stock.naver.com/api/stock/' + code + '/basic');
   for (var i = 0; i < PROXIES.length; i++) {
     try {
-      var res = await fetch(PROXIES[i] + apiUrl);
+      var ctrl = new AbortController();
+      var tid = setTimeout(function(){ ctrl.abort(); }, 5000);
+      var res = await fetch(PROXIES[i] + apiUrl, { signal: ctrl.signal });
+      clearTimeout(tid);
       if (!res.ok) continue;
       var json = await res.json();
       var changeRate = parseFloat(json.fluctuationsRatio);
       if (!isNaN(changeRate)) return changeRate;
-    } catch(e) { /* try next proxy */ }
+    } catch(e) { /* timeout or network error — try next proxy */ }
   }
   return null;
 }
 
+async function fetchCommodityData(code) {
+  var cached = PRICE_CACHE[code];
+  if (cached && Date.now() - cached.ts < 60000) return cached.changeRate;
+
+  var yfHosts = ['https://query1.finance.yahoo.com', 'https://query2.finance.yahoo.com'];
+  for (var e = 0; e < yfHosts.length; e++) {
+    var yfUrl = encodeURIComponent(
+      yfHosts[e] + '/v8/finance/chart/' + code + '?interval=1d&range=5d'
+    );
+    for (var i = 0; i < PROXIES.length; i++) {
+      try {
+        var ctrl = new AbortController();
+        var tid = setTimeout(function(){ ctrl.abort(); }, 8000);
+        var res = await fetch(PROXIES[i] + yfUrl, { signal: ctrl.signal });
+        clearTimeout(tid);
+        if (!res.ok) continue;
+        var txt = await res.text();
+        if (!txt || txt.trim()[0] !== '{') continue;
+        var data = JSON.parse(txt);
+        var result = data.chart && data.chart.result && data.chart.result[0];
+        if (!result) continue;
+        var meta = result.meta || {};
+
+        // 방법 1: regularMarketChangePercent 필드 직접 사용
+        if (meta.regularMarketChangePercent !== undefined && !isNaN(meta.regularMarketChangePercent)) {
+          console.info('[HY-Z] 원자재', code, '방법1:', meta.regularMarketChangePercent + '%');
+          return meta.regularMarketChangePercent;
+        }
+
+        // 방법 2: regularMarketPreviousClose = 전일 공식 종가 (chartPreviousClose는 range 시작 직전 종가라 NG)
+        if (meta.regularMarketPrice && meta.regularMarketPreviousClose && meta.regularMarketPreviousClose !== 0) {
+          var pct2 = (meta.regularMarketPrice - meta.regularMarketPreviousClose) / meta.regularMarketPreviousClose * 100;
+          console.info('[HY-Z] 원자재', code, '방법2:', pct2.toFixed(2) + '%');
+          return pct2;
+        }
+
+        // 방법 3: indicators 종가 배열의 마지막 두 값으로 계산
+        var q = result.indicators && result.indicators.quote && result.indicators.quote[0];
+        if (q && q.close) {
+          var closes = q.close.filter(function(c){ return c != null; });
+          if (closes.length >= 2) {
+            var pct3 = (closes[closes.length-1] - closes[closes.length-2]) / closes[closes.length-2] * 100;
+            console.info('[HY-Z] 원자재', code, '방법3:', pct3.toFixed(2) + '%');
+            return pct3;
+          }
+        }
+      } catch(ex) { /* timeout or network — try next */ }
+    }
+  }
+
+  // 최종 폴백: Google Sheets "실시간 등락률" 탭
+  try {
+    var url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID
+            + '/gviz/tq?tqx=out:json&sheet=' + encodeURIComponent('실시간 등락률');
+    var res2 = await fetch(url);
+    var text2 = await res2.text();
+    var m = text2.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\)/);
+    if (m) {
+      var json2 = JSON.parse(m[1]);
+      var rows = json2.table.rows;
+      for (var j = 0; j < rows.length; j++) {
+        if (rows[j].c[0] && rows[j].c[0].v === code) return parseFloat(rows[j].c[1].v);
+      }
+    }
+  } catch(e2) {}
+
+  console.warn('[HY-Z] 원자재 fetch 최종 실패:', code);
+  return null;
+}
+
 async function fetchAllRealtimePrices(holdings) {
-  var tasks = holdings
+  // 국내·해외 주식: 전체 완료 후 한 번만 렌더 (개별 완료 시 렌더 X)
+  // → 캐시된 종목이 먼저 돌아와 부분 표시되는 문제 방지
+  var krTasks = holdings
     .filter(function(h){ return KR_RE.test(h.code); })
     .map(function(h){
       return fetchNaverStockData(h.code).then(function(rate){
-        if (rate !== null) PRICE_CACHE[h.code] = { changeRate: rate, ts: Date.now() };
+        if (rate !== null) {
+          PRICE_CACHE[h.code] = { changeRate: rate, ts: Date.now() };
+          savePriceCache();
+        }
       });
     });
-  await Promise.allSettled(tasks);
-  var statusEl = document.getElementById('phm-status');
-  if (statusEl) {
-    var state = getMarketState();
-    var kst = new Date(Date.now() + 9*3600*1000);
-    var hm = ('0'+kst.getUTCHours()).slice(-2) + ':' + ('0'+kst.getUTCMinutes()).slice(-2);
-    var icons = {realtime:'🟢', reset:'🟡', closed:'⚫', weekend:'⚫'};
-    var labels = {realtime:'장중', reset:'장전 초기화', closed:'장마감', weekend:'주말'};
-    statusEl.textContent = (icons[state]||'⚫') + ' ' + (labels[state]||state) + ' · KST ' + hm;
-  }
-  renderPortfolioHeatmap(holdings);
+
+  // 원자재: 느린 Yahoo Finance를 기다리지 않도록 fire-and-forget
+  // → KR 주식 렌더를 막지 않고, 응답 오면 자동으로 히트맵 업데이트
+  holdings
+    .filter(function(h){ return h.type === '원자재' && h.code; })
+    .forEach(function(h){
+      fetchCommodityData(h.code).then(function(rate){
+        if (rate !== null) {
+          PRICE_CACHE[h.code] = { changeRate: rate, ts: Date.now() };
+          savePriceCache();
+          scheduleHeatmapRender(holdings);
+        }
+      }).catch(function(){});
+    });
+
+  // KR 주식 완료 후 상태 배지 업데이트 + 최종 렌더 보장
+  await Promise.allSettled(krTasks);
+  updateMarketStatusBadge();
+  scheduleHeatmapRender(holdings);
 }
 
 function getMarketState() {
@@ -1465,13 +1641,23 @@ function getDailyChange(holding) {
 
 function startRealtimePriceUpdates(holdings) {
   if (priceUpdateTimer) { clearInterval(priceUpdateTimer); priceUpdateTimer = null; }
+  loadPriceCache();
   fetchAllRealtimePrices(holdings);
   priceUpdateTimer = setInterval(function(){ fetchAllRealtimePrices(holdings); }, 30000);
 }
 
+function startHoldingsAutoReload() {
+  if (_holdingsAutoReloadStarted) return;
+  _holdingsAutoReloadStarted = true;
+  holdingsReloadTimer = setInterval(function() {
+    loadData().catch(function(e){ console.warn('[HY-Z] holdings 재로드 실패:', e); });
+    console.log('[HY-Z] holdings 자동 재로드 완료');
+  }, 300000);
+}
+
 // ─── 포트폴리오 히트맵 · Squarify Treemap ───────────────
 function phmDailyColor(p) {
-  if (p === 0)  return '#4a4a4a';
+  if (p === 0)  return cssVar('--phm-zero');
   if (p >= 3)   return '#1B5E20';
   if (p >= 2)   return '#2E7D32';
   if (p >= 1)   return '#388E3C';
@@ -1580,6 +1766,9 @@ function renderPortfolioHeatmap(holdings) {
   var GAP = 2;
   var groupRects = squarify(groupItems, {x:0,y:0,w:cw,h:ch});
 
+  // 범례 너비 = 히트맵 전체 가로의 1/3
+  var legendPxWidth = Math.round(cw / 3);
+
   var html = '';
   groupRects.forEach(function(gr) {
     var gx=Math.round(gr.x), gy=Math.round(gr.y),
@@ -1616,6 +1805,32 @@ function renderPortfolioHeatmap(holdings) {
 
   wrapEl.innerHTML = html;
 
+  // 색상 범례 렌더 — 인라인 스타일로 가로 배치 강제 + 원자재 그룹 너비 맞춤
+  var legendEl = document.getElementById('phm-legend');
+  if (legendEl) {
+    var legW = legendPxWidth > 40 ? legendPxWidth + 'px' : 'fit-content';
+    legendEl.style.cssText = 'display:flex;flex-direction:row;gap:2px;margin-top:8px;'
+      + 'width:' + legW + ';margin-left:auto;';
+    var LEGEND_STEPS = [
+      { label: '≤-3%', val: -3.5 },
+      { label: '-2%',  val: -2.5 },
+      { label: '-1%',  val: -1.5 },
+      { label: '0%',   val:  0   },
+      { label: '+1%',  val:  1   },
+      { label: '+2%',  val:  2   },
+      { label: '≥+3%', val:  3.5 },
+    ];
+    // 큰따옴표를 style 속성 밖에 쓰면 HTML이 깨지므로 font-family는 제외
+    var itemStyle = 'flex:1;min-width:0;height:18px;border-radius:2px;'
+      + 'display:flex;align-items:center;justify-content:center;'
+      + 'font-size:8.5px;font-weight:600;'
+      + 'color:#fff;text-shadow:0 1px 2px rgba(0,0,0,0.6);white-space:nowrap;';
+    legendEl.innerHTML = LEGEND_STEPS.map(function(s) {
+      return '<div style="' + itemStyle + 'background:' + phmDailyColor(s.val) + '">'
+             + s.label + '</div>';
+    }).join('');
+  }
+
   wrapEl.querySelectorAll('.phm-item-block').forEach(function(el) {
     el.addEventListener('dblclick', function() {
       var code = el.dataset.code;
@@ -1646,6 +1861,7 @@ function renderAll(data, live){
     sp500Hist:  data.sp500Hist  || FALLBACK.sp500Hist  || [],
     benchHist:  data.benchHist  || FALLBACK.benchHist  || [],
     usdkrwHist: data.usdkrwHist || FALLBACK.usdkrwHist || [],
+    allocation: data.allocation || FALLBACK.allocation,
   };
 
   renderKPIs(data);
@@ -1655,8 +1871,10 @@ function renderAll(data, live){
   renderHeatmap(data.returns || FALLBACK.returns);
   renderPortfolio(data.holdings||FALLBACK.holdings);
   var heatmapHoldings = data.holdings||FALLBACK.holdings;
+  _currentHeatmapHoldings = heatmapHoldings;
   renderPortfolioHeatmap(heatmapHoldings);
   startRealtimePriceUpdates(heatmapHoldings);
+  startHoldingsAutoReload();
   renderMembers(data.members||FALLBACK.members, data.memberDate||FALLBACK.memberDate, data.navPerShare||FALLBACK.navPerShare, data.capitalByMember||{});
   setStatus(live);
   document.getElementById('loading').style.display='none';
@@ -1723,6 +1941,28 @@ async function loadData(){
 
 // 기간 탭은 처음 한 번만 바인딩
 bindPeriodTabs();
+
+// 테마 토글
+document.getElementById('theme-toggle').addEventListener('click', function() {
+  var cur = document.documentElement.getAttribute('data-theme');
+  var next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('hyz_theme', next);
+  if (CHART_STATE.dataCache) {
+    renderCompareChart();
+    renderDonut(CHART_STATE.dataCache.allocation || FALLBACK.allocation);
+  }
+});
+
+// 히트맵 즉시 새로고침 버튼
+document.getElementById('phm-refresh-btn').addEventListener('click', function() {
+  var btn = this;
+  btn.classList.add('spinning');
+  loadData().finally(function() {
+    setTimeout(function() { btn.classList.remove('spinning'); }, 800);
+  });
+});
+
 loadData();
 </script>
 </body>
