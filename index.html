@@ -1858,7 +1858,7 @@ function renderAll(data, live){
   renderBench(data);
   renderHeatmap(data.returns || FALLBACK.returns);
   renderPortfolio(data.holdings||FALLBACK.holdings);
-  var heatmapHoldings = data.holdings||FALLBACK.holdings;
+  var heatmapHoldings = (data.holdings||FALLBACK.holdings).filter(function(h){ return h.type !== '달러' && h.type !== '원화'; });
   _currentHeatmapHoldings = heatmapHoldings;
   loadPriceCache();
   renderPortfolioHeatmap(heatmapHoldings);
